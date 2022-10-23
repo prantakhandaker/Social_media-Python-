@@ -10,9 +10,10 @@ from .models import profile, post
 @login_required(login_url= 'signin')
 def index(request):
     user_object = User.objects.get(username=request.user.username)
-    # user_profile = profile.objects.get(user=user_object)
-    return render(request, 'index.html')
+    user_profile = profile.objects.get(user=user_object)
 
+    posts = post.objects.all()
+    return render(request, 'index.html', {'user_profile':user_profile,'posts':posts})
 
 @login_required(login_url= 'signin')
 def upload(request):
