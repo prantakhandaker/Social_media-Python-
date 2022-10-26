@@ -10,10 +10,13 @@ from .models import profile, post, LikePost
 @login_required(login_url= 'signin')
 def index(request):
     user_object = User.objects.get(username=request.user.username)
-    # user_profile = profile.objects.get(user=user_object)
+    user_profile = profile.objects.get(user=user_object)
 
     posts = post.objects.all()
-    return render(request, 'index.html', {'posts':posts})
+    return render(request, 'index.html', {'user_profile':user_profile ,'posts':posts})
+
+
+
 
 @login_required(login_url= 'signin')
 def upload(request):
@@ -39,22 +42,23 @@ def like_post(request):
     username = request.user.username
     post_id  = request.GET.get('post_id')
 
-    
-
-    post = post.objects.get(id=post_id)
+    # global post
+    posts = post.objects.get(id=post_id)
 
     like_filter = LikePost.objects.filter(post_id=post_id, username=username).first()
+
 
     if like_filter == None:
         new_like   = LikePost.objects.create(post_id=post_id, username=username)
         new_like.save()
-        post.no_of_likes = post.no_of_likes +1
-        post.save()
+        posts.no_of_likes = posts.no_of_likes + 1
+        posts.save()
         return redirect('/')
+
     else:
         like_filter.delete()
-        post.no_of_likes = post.no_of_likes -1
-        post.save()
+        posts.no_of_likes = posts.no_of_likes - 1
+        posts.save()
         return redirect('/')
 
 
@@ -100,6 +104,8 @@ def signup(request):
         return render(request, 'signup.html')
 
 
+
+
 def signin(request):
 
     if request.method == 'POST':
@@ -118,10 +124,14 @@ def signin(request):
     else:
         return render(request, 'signin.html')
 
+
+
 @login_required(login_url= 'signin')
 def logout(request):
     auth.logout(request)
     return redirect('signin')
+
+
 
 
 @login_required(login_url= 'signin')
