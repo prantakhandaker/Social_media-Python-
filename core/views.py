@@ -4,16 +4,33 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from .models import profile, post, LikePost, FollowersCount
+from itertools import chain
 
 # Create your views here.
 
 @login_required(login_url= 'signin')
 def index(request):
-    user_object = User.objects.get(username=request.user.username)
-    user_profile = profile.objects.get(user=user_object)
+    user_object     = User.objects.get(username=request.user.username)
+    user_profile    = profile.objects.get(user=user_object)
+
+
+    user_following_list = []
+    feed = []
+
+    user_following = FollowersCount.objects.filter(follower=request.user.username)
+
+    for users in user_following:
+        user_following_list.append(users.user)
+
+    for username in user_following_list:
+        feed_lists = post.objects.filter(user = username)
+        feed.append(feed_lists)
+
+    feed_list = list(chain(*feed))
+
 
     posts = post.objects.all()
-    return render(request, 'index.html', {'user_profile':user_profile ,'posts':posts})
+    return render(request, 'index.html', {'user_profile':user_profile ,'posts':feed_list})
 
 
 
@@ -65,12 +82,12 @@ def like_post(request):
 
 def signup(request):
 
-    if request.method == 'POST':
+    if request.method   == 'POST':
 
-        username    = request.POST['username']
-        email       = request.POST['email']
-        password    = request.POST['password']
-        password2   = request.POST['password2']
+        username        = request.POST['username']
+        email           = request.POST['email']
+        password        = request.POST['password']
+        password2       = request.POST['password2']
         
         if password == password2:
             if User.objects.filter(email=email).exists():
@@ -108,10 +125,10 @@ def signup(request):
 
 def signin(request):
 
-    if request.method == 'POST':
+    if request.method   == 'POST':
         
-        username = request.POST['username']
-        password = request.POST['password']
+        username        = request.POST['username']
+        password        = request.POST['password']
 
         user = auth.authenticate(username=username, password=password)
 
@@ -205,9 +222,9 @@ def Profile(request, pk):
 @login_required(login_url= 'signin')
 def follow(request):
 
-    if request.method == 'POST':
-        follower = request.POST['follower']
-        user = request.POST['user']
+    if request.method   == 'POST':
+        follower        = request.POST['follower']
+        user            = request.POST['user']
 
         if FollowersCount.objects.filter(follower= follower , user= user).first():
             delete_follower = FollowersCount.objects.get(follower= follower , user= user)
@@ -220,6 +237,31 @@ def follow(request):
 
     else:
         return redirect('/')
+
+
+
+def search(request):
+
+    user_object = User.objects.get(username = request.user.username)
+    user_profile = profile.objects.get(user = user_object)
+
+    if request.method == 'POST':
+       username = request.POST['username']
+       username_object = User.objects.filter(username__icontains = username)
+
+       username_profile = []
+       username_profile_list = []
+
+       for users in username_object:
+        username_profile.append(users.id)
+
+        for ids in username_profile:
+            profile_lists = profile.objects.filter(id_user=ids)
+            username_profile_list.append(profile_lists)
+
+        username_profile_list = list(chain(*username_profile_list))
+
+    return render(request, 'search.html', {'user_profile':user_profile, 'username_profile_list':username_profile_list})
 
 
 
